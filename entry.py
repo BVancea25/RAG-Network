@@ -1,22 +1,24 @@
-from documentEncoder import encode_docs,encode_query
+from documentEncoder import encode_docs,encode_query,read_pdf,create_faiss_index,save_faiss_index
 import faiss
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
+project_directory = os.getcwd()
+
+
+
 gpt_tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 gpt_model = GPT2LMHeadModel.from_pretrained('gpt2')
 
-document_corpus = [
-    "Green tea has many health benefits, one of the biggest is it contains antioxidants.",
-    "Exercise is essential for a healthy lifestyle.",
-    "Balanced diet is important for maintaining good health."
-]
+document_corpus=[]
+absolute_file_path = os.path.abspath("Bogdan_Radu_Vancea_CV.pdf")
+text=read_pdf(absolute_file_path)
+embedding=encode_docs(text)
+index=create_faiss_index(embedding)
+save_faiss_index(index,project_directory)
 
-document_embeddings=encode_docs(document_corpus)
-embedding_size = document_embeddings.shape[1]
-index=faiss.IndexFlatL2(embedding_size)
-index.add(document_embeddings)
+document_corpus.append(text)
 
 print("Introduce query \n")
 query=input()
@@ -28,6 +30,7 @@ retrieved_documents = [document_corpus[i] for i in indices[0]]
 
 
 gpt_tokenizer.pad_token = gpt_tokenizer.eos_token
+
 # Combine the query with retrieved documents
 combined_input = query + "\n" + "\n".join(retrieved_documents)
 
